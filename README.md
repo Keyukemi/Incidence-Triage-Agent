@@ -65,7 +65,7 @@ No OpenRouter infra indicators. Monitor Anthropic latency.
 | API | OpenRouter SDK |
 | Database | SQLite (better-sqlite3) |
 | Styling | Tailwind CSS |
-| Deployment | Railway |
+| Deployment | Vercel |
 
 ## Quick Start
 

@@ -2,7 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { normalize } from '@/lib/normalizer';
 import { classify } from '@/lib/classifier';
 import { explain } from '@/lib/explainer';
-import { saveIncident, findSimilar } from '@/lib/db';
+let dbModule: typeof import('@/lib/db') | null = null;
+
+async function getDB() {
+  if (dbModule) return dbModule;
+  try {
+    dbModule = await import('@/lib/db');
+    return dbModule;
+  } catch {
+    console.warn('[DB] SQLite not available — running without incident history');
+    return null;
+  }
+}
 
 const MAX_INPUT_LENGTH = 5000;
 
@@ -51,9 +62,12 @@ export async function POST(request: NextRequest) {
     const report = await explain(incident, classification);
 
     try {
-      const similarIncidents = findSimilar(incident.error.message);
-      report.similarIncidents = similarIncidents;
-      saveIncident(incident, classification, report);
+      const db = await getDB();
+      if (db) {
+        const similarIncidents = db.findSimilar(incident.error.message);
+        report.similarIncidents = similarIncidents;
+        db.saveIncident(incident, classification, report);
+      }
     } catch (dbError) {
       console.error('[DB] Database operation failed:', dbError);
     }
