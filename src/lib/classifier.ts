@@ -47,12 +47,14 @@ Respond with valid JSON only, no markdown:
 }`;
 
 export async function classify(input: IncidentInput): Promise<IncidentClassification> {
-  const userMessage = JSON.stringify({
-    model: input.model,
-    error: input.error,
-    latencyMs: input.latencyMs,
-    requestId: input.requestId,
-  }, null, 2);
+  const userMessage = input.inputType === 'text'
+    ? input.rawInput
+    : JSON.stringify({
+        model: input.model,
+        error: input.error,
+        latencyMs: input.latencyMs,
+        requestId: input.requestId,
+      }, null, 2);
 
   try {
     const response = await client.chat.send({
@@ -83,7 +85,8 @@ export async function classify(input: IncidentInput): Promise<IncidentClassifica
       provider: parsed.provider ?? undefined,
       signals: Array.isArray(parsed.signals) ? parsed.signals : [],
     };
-  } catch {
+  } catch (error) {
+    console.error('[Classifier] LLM call failed:', error);
     return fallbackClassification(input);
   }
 }

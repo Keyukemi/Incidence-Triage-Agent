@@ -71,13 +71,16 @@ function parseCurl(raw: string): IncidentInput {
 
 function parseText(raw: string): IncidentInput {
   const codeMatch = raw.match(/\b(4\d{2}|5\d{2})\b/);
-  const modelMatch = raw.match(/(anthropic|openai|google|meta)\/([\w.-]+)/i);
+  const modelMatch = raw.match(/(anthropic|openai|google|meta|minimax|mistral|cohere)\/([\w.-]+)/i);
+
+  const firstLine = raw.split('\n')[0].slice(0, 200);
+  const summary = firstLine || 'Free-form incident report';
 
   return {
     model: modelMatch?.[0] ?? undefined,
     error: {
       code: codeMatch ? Number(codeMatch[1]) : 0,
-      message: raw,
+      message: summary,
     },
     rawInput: raw,
     inputType: 'text',

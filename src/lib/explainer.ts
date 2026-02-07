@@ -50,13 +50,17 @@ export async function explain(
   input: IncidentInput,
   classification: IncidentClassification
 ): Promise<IncidentReport> {
+  const incidentData = input.inputType === 'text'
+    ? input.rawInput
+    : JSON.stringify({
+        model: input.model,
+        error: input.error,
+        latencyMs: input.latencyMs,
+        requestId: input.requestId,
+      }, null, 2);
+
   const userMessage = `INCIDENT DATA:
-${JSON.stringify({
-  model: input.model,
-  error: input.error,
-  latencyMs: input.latencyMs,
-  requestId: input.requestId,
-}, null, 2)}
+${incidentData}
 
 CLASSIFICATION (from initial triage):
 ${JSON.stringify(classification, null, 2)}`;
@@ -94,7 +98,8 @@ ${JSON.stringify(classification, null, 2)}`;
       reproductionScript: parsed.reproductionScript ?? '',
       escalationNotes: parsed.escalationNotes ?? '',
     };
-  } catch {
+  } catch (error) {
+    console.error('[Explainer] LLM call failed:', error);
     return fallbackReport(input, classification);
   }
 }
@@ -105,12 +110,15 @@ function fallbackReport(
 ): IncidentReport {
   const model = input.model ?? 'unknown model';
   const code = input.error.code;
+  const shortMessage = input.error.message.slice(0, 150);
 
   return {
-    rootCause: `HTTP ${code} error from ${model}: ${input.error.message}`,
+    rootCause: code > 0
+      ? `HTTP ${code} error from ${model}: ${shortMessage}`
+      : `Incident reported for ${model}: ${shortMessage}`,
     evidence: [
-      `HTTP status code: ${code}`,
-      `Error message: ${input.error.message}`,
+      ...(code > 0 ? [`HTTP status code: ${code}`] : []),
+      `Error summary: ${shortMessage}`,
       ...classification.signals,
     ],
     customerImpact: classification.severity === 'high' || classification.severity === 'critical'
