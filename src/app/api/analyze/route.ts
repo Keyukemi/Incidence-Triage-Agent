@@ -2,6 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { normalize } from '@/lib/normalizer';
 import { classify } from '@/lib/classifier';
 import { explain } from '@/lib/explainer';
+import { saveIncident, findSimilar } from '@/lib/db';
+
+const MAX_INPUT_LENGTH = 5000;
+
+const INJECTION_PATTERNS = [
+  /ignore\s+(all\s+)?previous\s+instructions/i,
+  /ignore\s+(all\s+)?above\s+instructions/i,
+  /disregard\s+(all\s+)?previous/i,
+  /you\s+are\s+now\s+a/i,
+  /output\s+your\s+system\s+prompt/i,
+  /reveal\s+your\s+(system\s+)?prompt/i,
+  /repeat\s+your\s+instructions/i,
+];
+
+function containsInjection(input: string): boolean {
+  return INJECTION_PATTERNS.some((pattern) => pattern.test(input));
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,9 +32,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (rawInput.length > MAX_INPUT_LENGTH) {
+      return NextResponse.json(
+        { error: `Input too long. Maximum ${MAX_INPUT_LENGTH} characters allowed.` },
+        { status: 400 }
+      );
+    }
+
+    if (containsInjection(rawInput)) {
+      return NextResponse.json(
+        { error: 'Input contains disallowed patterns.' },
+        { status: 400 }
+      );
+    }
+
     const incident = normalize(rawInput);
     const classification = await classify(incident);
     const report = await explain(incident, classification);
+
+    try {
+      const similarIncidents = findSimilar(incident.error.message);
+      report.similarIncidents = similarIncidents;
+      saveIncident(incident, classification, report);
+    } catch (dbError) {
+      console.error('[DB] Database operation failed:', dbError);
+    }
 
     return NextResponse.json({
       incident,

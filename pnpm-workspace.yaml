@@ -4,3 +4,4 @@ ignoredBuiltDependencies:
 
 onlyBuiltDependencies:
   - '@openrouter/sdk'
+  - better-sqlite3

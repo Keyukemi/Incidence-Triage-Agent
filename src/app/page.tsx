@@ -26,6 +26,14 @@ const SAMPLE_INPUTS = [
       error: { code: 400, message: 'Invalid request: messages array is required' },
     }, null, 2),
   },
+  {
+    label: 'Text — Bug Report',
+    value: `Model: anthropic/claude-3.5-sonnet
+Issue: Intermittent 502 Bad Gateway errors during peak hours (2-4pm EST).
+Affects roughly 30% of requests. Latency spikes to 25s before failing.
+Workaround: Manually retrying works after 10-15 seconds.
+Started happening 2 days ago, no changes on our side.`,
+  },
 ];
 
 interface AnalysisResult {
@@ -78,11 +86,21 @@ export default function Home() {
     <main className="min-h-screen bg-[#0a0a0a] text-[#ededed] font-[family-name:var(--font-geist-sans)]">
       <div className="max-w-4xl mx-auto px-6 py-12">
         <header className="mb-10">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="px-2 py-0.5 text-xs font-medium bg-emerald-950/40 text-emerald-400 border border-emerald-900/50 rounded-full">
+              OpenRouter Native
+            </span>
+          </div>
           <h1 className="text-2xl font-bold tracking-tight">
             Incident Triage Agent
           </h1>
-          <p className="text-sm text-neutral-400 mt-1">
-            Support-grade incident analysis for OpenRouter API failures
+          <p className="text-sm text-neutral-400 mt-2 max-w-2xl">
+            Paste a failed API request, error JSON, curl command, or plain-text bug report.
+            This agent classifies the incident, isolates the fault domain, and generates
+            a support-grade analysis with actionable mitigation steps.
+          </p>
+          <p className="text-xs text-neutral-600 mt-2">
+            Uses gpt-4o-mini for fast classification · claude-3.5-sonnet for deep analysis
           </p>
         </header>
 
@@ -216,6 +234,27 @@ function ReportDisplay({ result, onCopy }: { result: AnalysisResult; onCopy: () 
       </ReportSection>
 
       <ReportSection title="Escalation Notes" content={report.escalationNotes} />
+
+      {report.similarIncidents && report.similarIncidents.length > 0 && (
+        <ReportSection title="Similar Past Incidents">
+          <ul className="space-y-2">
+            {report.similarIncidents.map((incident) => (
+              <li key={incident.id} className="text-sm text-neutral-300 border-b border-neutral-800 pb-2 last:border-0">
+                <span className="text-neutral-500 text-xs">{incident.createdAt}</span>
+                <span className="mx-2 text-neutral-600">|</span>
+                <span className={`text-xs font-medium ${
+                  incident.severity === 'high' || incident.severity === 'critical'
+                    ? 'text-orange-400' : 'text-neutral-400'
+                }`}>
+                  {incident.severity.toUpperCase()}
+                </span>
+                <span className="mx-2 text-neutral-600">|</span>
+                <span>{incident.errorMessage}</span>
+              </li>
+            ))}
+          </ul>
+        </ReportSection>
+      )}
     </div>
   );
 }
