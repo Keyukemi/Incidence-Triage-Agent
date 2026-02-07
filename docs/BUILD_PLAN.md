@@ -12,7 +12,7 @@ Before starting, ensure you have:
 - [ ] pnpm installed (`npm install -g pnpm`)
 - [ ] OpenRouter API key ([get one here](https://openrouter.ai/keys))
 - [ ] GitHub account (for deployment)
-- [ ] Vercel account (free tier)
+- [ ] Railway account ([railway.com](https://railway.com))
 
 ---
 
@@ -254,9 +254,9 @@ Test end-to-end via CLI or simple script before moving to UI.
    - Update README with screenshots
    - Test build locally (`pnpm build`)
 
-3. Deploy to Vercel
+3. Deploy to Railway
    - Push to GitHub
-   - Connect to Vercel
+   - Connect to Railway
    - Add environment variables
    - Deploy
 
@@ -343,10 +343,10 @@ Use these to validate your implementation:
 - Verify key has credits on OpenRouter dashboard
 - Ensure no trailing whitespace
 
-### "SQLite not working on Vercel"
-- Expected: Vercel has ephemeral filesystem
+### "SQLite not working on Railway"
+- Railway has persistent storage, but SQLite can still be tricky with deploys
 - For demo: Accept data loss on redeploy
-- For production: Use Turso or PlanetScale
+- For production: Use Railway's PostgreSQL or Turso
 
 ### "Claude model failing"
 - Check OpenRouter dashboard for provider status

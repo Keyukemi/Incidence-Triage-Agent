@@ -232,15 +232,16 @@ The agent should gracefully handle:
 
 ## Deployment
 
-**Platform**: Vercel (free tier)
+**Platform**: Railway
 
-**Why Vercel**:
+**Why Railway**:
 - Native Next.js support
 - Automatic HTTPS
 - Easy environment variable management
-- One-click deploy from GitHub
+- Deploy from GitHub
+- Persistent volume storage (better for SQLite than serverless)
 
 **Considerations**:
-- SQLite works on Vercel with caveats (ephemeral filesystem)
-- For production: consider Turso or PlanetScale
-- For this demo: SQLite is fine, data loss on redeploy is acceptable
+- SQLite can still be tricky across deploys
+- For production: consider Railway's PostgreSQL or Turso
+- For this demo: SQLite is fine
